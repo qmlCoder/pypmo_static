@@ -1,0 +1,47 @@
+name: Deploy Vue App to GitHub Pages
+
+on:
+  push:
+    branches: [main, master] # 根据你的默认分支调整
+  workflow_dispatch: # 允许手动触发
+
+# 授予权限（关键！Pages 需要写权限）
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm' # 或 'yarn', 'pnpm'
+
+      - name: Install dependencies
+        run: npm ci # 或 yarn install --frozen-lockfile
+
+      - name: Build
+        run: npm run build # 生成 dist/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
